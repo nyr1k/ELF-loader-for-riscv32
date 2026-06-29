@@ -11,31 +11,38 @@ _start:
   cmp qword [rsp], 2
   jne exit_error 
 
-  ; print test message 
-  mov rax, 1 
-  mov rdi, 1 
-  mov rsi, testMsg
-  mov rdx, 12 
-  syscall  
+  ; open the ELF file 
+  mov rax, 2 ; sys_open
+  mov rdi, [rsp+16] ; file name
+  mov rsi, 0 ; O_RDONLY
+  mov rdx, 0 ; ignore mode
+  syscall 
 
-  ; pass the argument string to strlen 
-  mov rdi, [rsp+16] 
-  call strlen 
- 
-  ; print the argument string 
-  mov rdx, rax ; string length 
-  mov rsi, rdi ; pass the string
-  mov rax, 1 ; sys_write
-  mov rdi, 1 ; fd 1 ->  stdout
-  syscall  
+  ; if return value < 0 -> exit 
+  cmp rax, 0 
+  jl exit_error 
 
-  ; print newline
+  push rax ; save the file descriptor
+  
+  sub rsp, 1024 ; allocate read buffer 
+
   mov rax, 1
   mov rdi, 1
-  mov rsi, newline
-  mov rdx, 1
+  mov rsi, testMsg
+  mov rdx, 12
+  syscall  
+
+  add rsp, 1024 ; deallocate read buffer
+  pop rdi ; pop the file descriptor
+
+  ; close the ELF file
+  mov rax, 3 ; sys_close
   syscall 
-  
+
+  ; if return value < 0 -> exit
+  cmp rax, 0
+  jl exit_error
+
   ; exit successfully 
   mov rax, 60 
   xor edi, edi 
