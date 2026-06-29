@@ -1,2 +1,4 @@
 elf_parser
 elf_parser.o
+test/test.o
+test/test
