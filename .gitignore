@@ -1,5 +1,5 @@
-elf_parser
-elf_parser.o
+elf_loader
+elf_loader.o
 test/crt0.s
 test/crt0.o
 test/testV.c

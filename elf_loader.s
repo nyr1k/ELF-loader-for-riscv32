@@ -55,7 +55,7 @@ _start:
 ;;;
 check_header:
   ; check magic numbers
-  cmp dword[rdi], 0x464c457f ; this hex is '.ELF' in little-endian mode
+  cmp dword[rdi], 0x464c457f ; this hex is '0x7f ELF' in little-endian mode
   jne exit_error 
   
   ; check bitness and endian mode 

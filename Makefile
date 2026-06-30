@@ -1,12 +1,12 @@
 .PHONY: all test clean 
 
-all: elf_parser 
+all: elf_loader 
 
-elf_parser: elf_parser.s
-	nasm -f elf64 -o elf_parser.o elf_parser.s && ld -o elf_parser elf_parser.o
+elf_loader: elf_loader.s
+	nasm -f elf64 -o elf_loader.o elf_loader.s && ld -o elf_loader elf_loader.o
 	
-test: elf_parser 
-	@./elf_parser test/test_program.elf
+test: elf_loader 
+	@./elf_loader test/test_program.elf
 
 clean:
-	rm elf_parser.o elf_parser 
+	rm elf_loader.o elf_loader
