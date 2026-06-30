@@ -1,4 +1,7 @@
 elf_parser
 elf_parser.o
-test/test.o
-test/test
+test/crt0.s
+test/crt0.o
+test/testV.c
+test/testV.o
+test/linker.ld
