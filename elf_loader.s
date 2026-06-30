@@ -1,7 +1,12 @@
-section .data
-  testMsg db "Hello World", 10 
-  newline db 10 
-  elf_header db 52 ; elf header struct for 32-bit elfs 
+section .data 
+
+section .bss
+  buffer  resb 128 ; elf header struct for 32-bit elfs 
+  e_entry resd 1 ; the entry point of the program
+  e_phoff resd 1 ; start of the program header 
+  e_phentrysz resw 1 ; size of the program header entry
+  e_phnum resw 1 ; number of entries in the program header
+
 
 section .text
   global _start 
@@ -26,15 +31,16 @@ _start:
   ; load the ELF header 
   mov rax, 0 ; sys_read
   mov rdi, [rsp] ; fd
-  mov rsi, elf_header ; buffer
+  mov rsi, buffer ; buffer
   mov rdx, 52 ; bytes to read
   syscall    
   ; if return value < 0 -> exit 
   cmp rax, 0
   jl exit_error
 
-  mov rdi, elf_header 
+  mov rdi, buffer 
   call check_header
+
   
 
 .exit: 
@@ -66,6 +72,20 @@ check_header:
   cmp dword[rdi+16], 0x00F30002 ; 0x02 = Executable file
   jne exit_error
 
+  ; if everything's correct -> copy the program header fields
+  mov eax, [rdi+24]
+  mov [e_phoff], eax 
+  
+  mov eax, [rdi+28]
+  mov [e_entry], eax
+  
+  mov ax, [rdi+42]
+  mov [e_phentrysz], ax
+  
+  mov ax, [rdi+44]
+  mov [e_phnum], ax
+
+.done:
   ret
 
 ;;;
