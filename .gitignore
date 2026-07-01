@@ -5,3 +5,4 @@ test/crt0.o
 test/testV.c
 test/testV.o
 test/linker.ld
+.scratch.c.swp
