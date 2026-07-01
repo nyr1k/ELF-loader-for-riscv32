@@ -45,6 +45,7 @@ load_elf:
   lea rsi, [rsp-96] 
   call check_header
 
+.return
   add rsp, 96
   pop r13
   pop r12
@@ -52,9 +53,6 @@ load_elf:
   pop rbp
   mov rax, 0
   ret 
-
-.return:
-  ret
 
 _start:
   ; if argc != 2 -> exit 
