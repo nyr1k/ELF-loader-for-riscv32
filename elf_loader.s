@@ -40,11 +40,12 @@ load_elf:
   jne .return_error
 
   lea rdi, [rbp-52] ; pass elf_header 
-  ; create struct for e_entry, e_phoff, e_phentrysz, e_phnum
-  sub rsp, 12
-  lea rsi, [rsp-96] 
+  sub rsp, 12 ; create struct for e_entry, e_phoff, e_phentrysz, e_phnum
+  lea rsi, [rsp-96]
+  sub rsp, 8 ; 16-byte alignment 
   call check_header
-  
+  add rsp, 8  
+
   add rsp, 96
   pop r13
   pop r12
@@ -68,9 +69,7 @@ _start:
   jne exit_error 
 
   mov rdx, [rsp+16]
-  sub rsp, 8  
   call load_elf
-  add rsp, 8
   
   cmp eax, 0
   jl exit_error 
