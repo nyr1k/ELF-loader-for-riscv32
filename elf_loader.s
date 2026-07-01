@@ -24,7 +24,7 @@ load_elf:
   ; return -1 if open fail
   cmp eax, 0 
   mov edi, -1
-  jl .return
+  jl .return_error
   ; save fd 
   mov ebx, eax  
 
@@ -37,22 +37,30 @@ load_elf:
   ; return -2 if read fail
   cmp eax, 52
   mov edi, -2
-  jne .return
+  jne .return_error
 
   lea rdi, [rbp-52] ; pass elf_header 
   ; create struct for e_entry, e_phoff, e_phentrysz, e_phnum
   sub rsp, 12
   lea rsi, [rsp-96] 
   call check_header
-
-.return
+  
   add rsp, 96
   pop r13
   pop r12
   pop rbx
   pop rbp
-  mov rax, 0
+  mov eax, 0
   ret 
+
+.return_error:
+  add rsp, 96
+  pop r13
+  pop r12
+  pop rbx
+  pop rbp
+  mov eax, edi
+  ret
 
 _start:
   ; if argc != 2 -> exit 
