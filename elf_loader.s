@@ -1,58 +1,74 @@
-section .data 
-
-section .bss
-  buffer  resb 128 ; elf header struct for 32-bit elfs 
-  e_entry resd 1 ; the entry point of the program
-  e_phoff resd 1 ; start of the program header 
-  e_phentrysz resw 1 ; size of the program header entry
-  e_phnum resw 1 ; number of entries in the program header
-
-
 section .text
-  global _start 
+  global _start
+  global load_elf 
+
+; edi - memory_size, rsi - *memory, rdx *elf_name 
+load_elf:
+  push rbp
+  push rbx
+  push r12
+  push r13 
+  mov rbp, rsp
+  sub rsp, 84 ; elf_header (52 bytes) & program_header (32 bytes) 
+  
+  ; save arguments before syscalls
+  mov r12d, edi
+  mov r13, rsi 
+ 
+  ; open the ELF file
+  mov eax, 2 ; sys_open
+  mov rdi, rdx
+  mov esi, 0 ; O_RDONLY
+  mov edx, 0 ; no mode
+  syscall
+  ; return -1 if open fail
+  cmp eax, 0 
+  mov edi, -1
+  jl .return
+  ; save fd 
+  mov ebx, eax  
+
+  ; load the ELF header
+  mov eax, 0 ; sys_read
+  mov edi, ebx ; fd 
+  lea rsi, [rbp-52] ; buffer 
+  mov edx, 52 ; read 52 bytes 
+  syscall
+  ; return -2 if read fail
+  cmp eax, 52
+  mov edi, -2
+  jne .return
+
+  lea rdi, [rbp-52] ; pass elf_header 
+  ; create struct for e_entry, e_phoff, e_phentrysz, e_phnum
+  sub rsp, 12
+  lea rsi, [rsp-96] 
+  call check_header
+
+  add rsp, 96
+  pop r13
+  pop r12
+  pop rbx
+  pop rbp
+  mov rax, 0
+  ret 
+
+.return:
+  ret
 
 _start:
   ; if argc != 2 -> exit 
   cmp qword [rsp], 2
   jne exit_error 
 
-  ; open the ELF file 
-  mov rax, 2 ; sys_open
-  mov rdi, [rsp+16] ; file name
-  mov rsi, 0 ; O_RDONLY
-  mov rdx, 0 ; ignore mode
-  syscall 
-  ; if return value < 0 -> exit 
-  cmp rax, 0 
+  mov rdx, [rsp+16]
+  sub rsp, 8  
+  call load_elf
+  add rsp, 8
+  
+  cmp eax, 0
   jl exit_error 
-  ; save the file descriptor
-  push rax 
-  
-  ; load the ELF header 
-  mov rax, 0 ; sys_read
-  mov rdi, [rsp] ; fd
-  mov rsi, buffer ; buffer
-  mov rdx, 52 ; bytes to read
-  syscall    
-  ; if return value < 0 -> exit 
-  cmp rax, 0
-  jl exit_error
-
-  mov rdi, buffer 
-  call check_header
-
-  
-
-.exit: 
-  ; get the file descriptor
-  pop rdi  
-  ; close the ELF file
-  mov rax, 3 ; sys_close
-  syscall 
-  ; if return value < 0 -> exit
-  cmp rax, 0
-  jl exit_error
-
+ 
   ; exit successfully 
   mov rax, 60 
   xor edi, edi 
@@ -74,29 +90,16 @@ check_header:
 
   ; if everything's correct -> copy the program header fields
   mov eax, [rdi+24]
-  mov [e_phoff], eax 
+  mov dword[rsi], eax 
   
   mov eax, [rdi+28]
-  mov [e_entry], eax
+  mov dword[rsi+4], eax
   
   mov ax, [rdi+42]
-  mov [e_phentrysz], ax
+  mov word[rsi+8], ax
   
   mov ax, [rdi+44]
-  mov [e_phnum], ax
-
-.done:
-  ret
-
-;;;
-strlen:
-  xor eax, eax 
-
-.loop: 
-  cmp byte [rdi+rax], 0 
-  je .done 
-  inc rax
-  jmp .loop 
+  mov word[rsi+10], ax
 
 .done:
   ret
@@ -105,4 +108,5 @@ strlen:
 exit_error:
   mov rax, 60
   mov rdi, 1
-  syscall 
+  syscall
+ 
